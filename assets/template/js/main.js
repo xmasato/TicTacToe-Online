@@ -7,14 +7,18 @@ $(document).ready(function () {
     let whogoes = '';
     let whowin = 0;
     let username = '';
+    let playerflag = ''; // локальный флаг для проверки хода
     let interval; // для остановки setIntraval
     let flag = 0; // срабатывает когда присоединяется второйо игрок
-    const HOST = 'http://tic:8080';  //хост для ajax
+
+    const HOST = 'http://pmchair.esy.es/tictac';  //хост для ajax
 
     // Ход
     $('.table').on('click', function (e) {
 
-        if(player == whogoes) {
+        if((player == whogoes) && (player == playerflag)) {
+            clientTurnFlag(whogoes);
+
             let col = $(e.target).data('col');
             let row = $(e.target).data('row');
 
@@ -48,9 +52,10 @@ $(document).ready(function () {
                     player = response.player;
                     roomid = response.roomid;
                     whogoes = response.whogoes;
+                    playerflag = response.whogoes;
                     hideElements();
                     showHead(response.id);
-                    interval = setInterval(statusCheck, 200);
+                    interval = setInterval(statusCheck, 4000);
             },
             data: { 'username': username}
         });
@@ -69,10 +74,11 @@ $(document).ready(function () {
                     if(response.length !== 0) {
                         checkField(response.field);
                         whogoes = response.whogoes;
+                        playerflag = response.whogoes;
                         roomid = response.roomid;
                         player = response.player2;
                         hideElements();
-                        setInterval(statusCheck, 200);
+                        setInterval(statusCheck, 4000);
                     } else {
                         $('#myError').modal('show');
                         interval = listGames();
@@ -132,6 +138,7 @@ $(document).ready(function () {
                     endGame(whowin);
                     whowin = response.whowin;
                     if(response.whogoes != whogoes) {
+                        playerflag = response.whogoes;
                         whogoes = response.whogoes;
                         checkField(response.field);
                     }
@@ -240,6 +247,18 @@ $(document).ready(function () {
             case 2:
                 if(!($('.player_turn').text() == 'Ход Соперника'))
                     $('.player_turn').text('Ход Соперника');
+                break;
+        }
+    }
+    // закрываем возможность много раз отпарвлять ход за раз
+    // при долгой отдачи от сервер, пока не пришел запрос меняем сразу того кто ходит
+    function clientTurnFlag(player) {
+        switch (player) {
+            case 1:
+                playerflag = 2;
+                break;
+            case 2:
+                playerflag = 1;
                 break;
         }
     }
